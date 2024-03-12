@@ -1,0 +1,155 @@
+<template>
+  <view class="wrap" @tap="handleHide">
+    <view class="content" @tap.stop>
+      <text class="title">{{ appInfo.name }}</text>
+      <view class="list">
+        <view
+          class="item"
+          v-for="(item, index) in menuList"
+          :key="index"
+          @tap="handle(item)"
+        >
+          <view class="icon" @tap="handle(item)" hover-class="icon--active">
+            <uni-icons
+              :type="item.type"
+              :size="36"
+              color="#000"
+              @tap="handle(item)"
+            />
+          </view>
+          <text class="text" @tap="handle(item)">{{ item.name }}</text>
+        </view>
+        <view class="item" v-for="(_, index) in itemNum" :key="index"></view>
+      </view>
+      <button
+        type="default"
+        :style="{ paddingBottom: safeAreaHeight }"
+        @tap="handleHide"
+      >
+        取消
+      </button>
+    </view>
+  </view>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      title: "",
+      content: "",
+      menuList: [
+        {
+          name: "刷新",
+          action: "reload",
+          type: "reload",
+        },
+      ],
+      safeAreaHeight: 0,
+      windowWidth: 0,
+      appInfo: {},
+    };
+  },
+  computed: {
+    itemNum() {
+      const lineNum = Math.floor((this.windowWidth - 24) / 62);
+      return lineNum - (this.menuList.length % lineNum);
+    },
+  },
+  onLoad() {
+    uni.$on("webView-menu", ({ action, payload }) => {
+      console.log("init", action, payload);
+      if (action === "init") {
+        this.appInfo = payload;
+      }
+    });
+    plus.key.addEventListener("backbutton", this.backListener, false);
+    uni.getCurrentSubNVue().setStyle({
+      popGesture: "none",
+    });
+    const { safeAreaInsets, windowWidth } = uni.getSystemInfoSync();
+    this.safeAreaHeight = safeAreaInsets.bottom;
+    this.subNVue = uni.getCurrentSubNVue();
+    this.windowWidth = windowWidth;
+  },
+  onUnload() {
+    uni.$off("webView-menu");
+    plus.key.removeEventListener("backbutton", this.backListener);
+  },
+  methods: {
+    // sendMessage() {
+    // 	const subNVue = uni.getCurrentSubNVue()
+    // 	uni.$emit('popup-page', {
+    // 		title: '已读完!',
+    // 	})
+    // },
+    backListener() {},
+    handle({ action }) {
+      uni.$emit("menu-webView", {
+        action,
+      });
+      this.handleHide();
+    },
+    handleHide() {
+      this.subNVue.hide("slide-out-bottom");
+    },
+  },
+};
+</script>
+
+<style lang="less" scoped>
+.wrap {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.content {
+  border-radius: 16px 16px 0 0;
+  background-color: #fff;
+}
+
+.title {
+  padding: 16px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.list {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  padding: 12px;
+  justify-content: space-around;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  margin: 0 4px 12px;
+  width: 54px;
+}
+
+.text {
+  font-size: 12px;
+  lines: 2;
+  text-align: center;
+}
+
+.icon {
+  background-color: #f0f0f0;
+  border-radius: 8px;
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+
+  &:active {
+    background-color: #f8f8f8 !important;
+  }
+}
+</style>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh">
+	<head>
+		<meta charset="UTF-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+		<title>接口测试</title>
+		<script src="./main.js"></script>
+
+		<style>
+			body {
+				min-height: 100vh;
+				position: relative;
+				overflow-x: hidden;
+				padding: 16px;
+				padding-bottom: 0;
+				box-sizing: border-box;
+				display: flex;
+				flex-direction: column;
+			}
+
+			* {
+				box-sizing: border-box;
+			}
+
+			button {
+				font-size: 20px;
+				text-align: center;
+			}
+
+			textarea {
+				flex: 1;
+				font-size: 18px;
+			}
+
+			@supports (bottom: constant(safe-area-inset-bottom)) or (bottom: env(safe-area-inset-bottom)) {
+				.safe-area {
+					height: constant(safe-area-inset-bottom);
+					height: env(safe-area-inset-bottom);
+					background-color: #000;
+					color: #fff;
+					text-align: center;
+				}
+			}
+		</style>
+
+	</head>
+	<body>
+		<button id="appinfo">获取App信息</button>
+		<button id="forward">网页前进测试</button>
+		<button id="scan">扫码测试</button>
+		<button id="location">获取位置</button>
+		<button id="cholocation">选择位置</button>
+		<!-- <button id="printer">标签打印机</button> -->
+		<button id="navbar-1">自定义顶部右侧按钮</button>
+		<button id="navbar">恢复顶部右侧按钮</button>
+		<textarea id="text">初始化中…</textarea>
+		<div class="safe-area">安全区</div>
+		<script type="text/javascript">
+			function init() {
+				window.localStorage.clear()
+				const forward = document.getElementById("forward")
+				const scan = document.getElementById("scan")
+				const location = document.getElementById("location")
+				const cholocation = document.getElementById("cholocation")
+				const appinfo = document.getElementById("appinfo")
+				const printer = document.getElementById("printer")
+				const navbar1 = document.getElementById("navbar-1")
+				const navbar = document.getElementById("navbar")
+				const p = document.getElementById("text")
+				p.innerHTML = plus.runtime.version
+
+				plus.runtime.getProperty(plus.runtime.appid, (info) => {
+					console.log(JSON.stringify(info));
+					p.innerHTML = JSON.stringify(info)
+					// this.version = info.version;
+					// this.versionCode = info.versionCode ;
+				})
+
+				UniBridge.addShowListener(() => {
+					p.innerHTML = '显示'
+				})
+				navbar1.onclick = () => {
+					UniBridge.setNavBarButtons([{
+						"text": " ",
+						"width": "16px"
+					}, {
+						"text": "清空未读",
+						"fontSize": "14px",
+						"width": "60px"
+					}])
+				}
+
+				UniBridge.onNavBarButtonTap = (e) => [
+					p.innerHTML = JSON.stringify(e)
+				]
+				UniBridge.addHideListener(() => {
+					p.innerHTML = '隐藏'
+				})
+				UniBridge.tapMenu = function() {
+					p.innerHTML = '点击了菜单按钮'
+				}
+				navbar.onclick = function() {
+					UniBridge.resetNavBarStyles()
+				}
+				forward.onclick = function() {
+					UniBridge.href({
+						url: 'https://www.baidu.com'
+					})
+				}
+				scan.onclick = async function() {
+					try {
+						const res = await UniBridge.scanCode()
+
+						p.innerText = JSON.stringify(res)
+					} catch (e) {
+						//TODO handle the exception
+						alert(e)
+					}
+
+				}
+				location.onclick = async function() {
+					try {
+						const res = await UniBridge.getLocation()
+						p.innerText = JSON.stringify(res)
+					} catch (e) {
+						//TODO handle the exception
+						alert(e)
+					}
+				}
+				cholocation.onclick = async function() {
+					try {
+						const res = await UniBridge.chooseLocation()
+						p.innerText = JSON.stringify(res)
+					} catch (e) {
+						//TODO handle the exception
+						alert(e)
+					}
+
+				}
+				appinfo.onclick = async function() {
+					try {
+						const res = await UniBridge.getAppInfo()
+						p.innerText = JSON.stringify(res)
+					} catch (e) {
+						//TODO handle the exception
+						alert(e)
+					}
+
+				}
+				printer.onclick = async function() {
+					try {
+						const res = await UniBridge.openLabelPrinter({
+							type: "image",
+							data: "data:image/png;base64,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"
+						})
+						p.innerText = JSON.stringify(res)
+					} catch (e) {
+						//TODO handle the exception
+						alert(e)
+					}
+
+				}
+			}
+
+			try {
+				if (window.UniBridgeReady) {
+					init()
+				} else {
+					document.addEventListener('UniAppJSBridgeReady', init)
+				}
+			} catch (e) {
+				alert(e)
+			}
+		</script>
+	</body>
+</html>
